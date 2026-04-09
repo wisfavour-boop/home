@@ -1,6 +1,15 @@
 # 통상임금 계산기
 
-이 폴더에는 2024년 대법원 판례 기준을 반영한 `통상임금 계산기` Python 스크립트가 포함되어 있습니다.
+이 폴더에는 2024년 대법원 판례 기준을 반영한 `통상임금 계산기`가 포함되어 있습니다. Python 스크립트와 HTML 웹 버전이 제공됩니다.
+
+## 파일 목록
+
+- `tongsang_imgeum_calculator.py` - Python 명령줄 버전
+- `tongsang_imgeum_calculator.html` - 웹 브라우저에서 실행되는 HTML 버전
+- `README.md` - 이 파일 (프로젝트 설명)
+- `.git/` - Git 버전 관리 폴더
+- `.venv/` - Python 가상환경 폴더
+- `__pycache__/` - Python 캐시 파일 폴더
 
 ## 주요 기능
 
@@ -11,6 +20,8 @@
 
 ## 사용 방법
 
+### Python 버전
+
 1. Python 3 설치
 2. 이 폴더에서 다음 명령 실행:
 
@@ -19,6 +30,12 @@ python tongsang_imgeum_calculator.py
 ```
 
 3. 항목 이름과 금액을 입력하고, 각 항목의 임금성/정기성/통상성 정보를 응답하세요.
+
+### HTML 버전
+
+1. 웹 브라우저에서 `tongsang_imgeum_calculator.html` 파일 열기
+2. 또는 VS Code에서 Live Server 확장으로 열기
+3. 브라우저에서 직접 항목 추가 및 계산
 
 ## 판례 반영 내용
 

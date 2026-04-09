@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>통상임금 계산기</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 24px; color: #222; background: #f8f9fb; }
+    h1, h2 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #ccd0d8; padding: 10px; text-align: left; }
+    th { background: #ecf0f5; }
+    input[type=text], input[type=number], select { width: 100%; padding: 6px 8px; box-sizing: border-box; }
+    button { background: #2d8cff; border: none; color: white; padding: 10px 16px; cursor: pointer; border-radius: 4px; }
+    button:hover { opacity: 0.95; }
+    .note { background: #fff8e1; border: 1px solid #ffe0a8; padding: 14px; margin-bottom: 16px; }
+    .result-box { background: white; border: 1px solid #d6dde7; padding: 16px; margin-top: 16px; }
+    .row-actions { display: flex; gap: 8px; }
+    .small-button { background: #7f8c9a; padding: 6px 10px; }
+  </style>
+</head>
+<body>
+  <h1>통상임금 계산기</h1>
+  <div class="note">
+    <strong>2024년 대법원 판례 반영:</strong> 통상임금 판단에서 <strong>고정성 징표</strong>는 필수 요건이 아닙니다.
+    정기성, 임금성, 통상성을 중심으로 통상임금 여부를 검토하세요.
+  </div>
+
+  <section>
+    <h2>임금 항목</h2>
+    <table id="items-table">
+      <thead>
+        <tr>
+          <th>항목명</th>
+          <th>금액</th>
+          <th>임금성</th>
+          <th>정기성</th>
+          <th>통상성</th>
+          <th>고정성</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" onclick="addRow()">항목 추가</button>
+      <button type="button" onclick="calculate()">계산하기</button>
+    </div>
+  </section>
+
+  <section style="margin-top: 24px;">
+    <h2>추가 수당</h2>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+      <label>연장 근로시간<br /><input type="number" id="overtime-hours" min="0" step="0.1" value="0" /></label>
+      <label>야간 근로시간<br /><input type="number" id="night-hours" min="0" step="0.1" value="0" /></label>
+      <label>휴일 근로시간<br /><input type="number" id="holiday-hours" min="0" step="0.1" value="0" /></label>
+    </div>
+  </section>
+
+  <section class="result-box" id="results" style="display:none;">
+    <h2>계산 결과</h2>
+    <div id="item-results"></div>
+    <p><strong>통상임금 합계:</strong> <span id="total-ordinary"></span></p>
+    <p><strong>1시간 통상임금:</strong> <span id="hourly-rate"></span></p>
+    <p><strong>1일 통상임금 (8시간):</strong> <span id="daily-rate"></span></p>
+    <p><strong>연장 1시간 수당 (1.5배):</strong> <span id="overtime-rate"></span></p>
+    <div id="extra-results" style="margin-top: 12px;"></div>
+  </section>
+
+  <script>
+    const tableBody = document.querySelector('#items-table tbody');
+
+    function createSelect(name) {
+      const select = document.createElement('select');
+      select.name = name;
+      const optionYes = document.createElement('option');
+      optionYes.value = 'true';
+      optionYes.textContent = '예';
+      const optionNo = document.createElement('option');
+      optionNo.value = 'false';
+      optionNo.textContent = '아니오';
+      select.append(optionYes, optionNo);
+      return select;
+    }
+
+    function addRow() {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><input type="text" name="name" placeholder="기본급" /></td>
+        <td><input type="number" name="amount" min="0" step="0.01" placeholder="금액" /></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="row-actions"></td>
+      `;
+      row.children[2].appendChild(createSelect('is_wage'));
+      row.children[3].appendChild(createSelect('is_regular'));
+      row.children[4].appendChild(createSelect('is_ordinary'));
+      row.children[5].appendChild(createSelect('is_fixed'));
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'small-button';
+      deleteButton.textContent = '삭제';
+      deleteButton.onclick = () => row.remove();
+      row.children[6].appendChild(deleteButton);
+
+      tableBody.appendChild(row);
+    }
+
+    function formatKRW(value) {
+      return value.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '원';
+    }
+
+    function calculate() {
+      const rows = [...tableBody.querySelectorAll('tr')];
+      if (!rows.length) {
+        alert('먼저 항목을 추가해주세요.');
+        return;
+      }
+
+      const items = rows.map((row) => {
+        const name = row.querySelector('input[name="name"]').value.trim();
+        const amount = parseFloat(row.querySelector('input[name="amount"]').value) || 0;
+        const isWage = row.querySelector('select[name="is_wage"]').value === 'true';
+        const isRegular = row.querySelector('select[name="is_regular"]').value === 'true';
+        const isOrdinary = row.querySelector('select[name="is_ordinary"]').value === 'true';
+        const isFixed = row.querySelector('select[name="is_fixed"]').value === 'true';
+        return { name, amount, isWage, isRegular, isOrdinary, isFixed };
+      });
+
+      const itemResults = items.map((item) => {
+        const selectedName = item.name || '(무명 항목)';
+        const isOrdinaryWage = item.isWage && item.isRegular && item.isOrdinary;
+        let description;
+        if (isOrdinaryWage) {
+          if (!item.isFixed) {
+            description = `${selectedName}: 통상임금 포함 가능 (정기성과 통상성 충족, 금액은 변동 가능)`;
+          } else {
+            description = `${selectedName}: 통상임금 포함`;
+          }
+        } else {
+          description = `${selectedName}: 통상임금 제외`;
+        }
+        return { ...item, description, isOrdinaryWage };
+      });
+
+      const ordinaryWage = itemResults.reduce((sum, item) => sum + (item.isOrdinaryWage ? item.amount : 0), 0);
+      const hoursPerMonth = 209;
+      const hourly = ordinaryWage / hoursPerMonth;
+      const daily = hourly * 8;
+      const overtimeHourly = hourly * 1.5;
+
+      const overtimeHours = parseFloat(document.querySelector('#overtime-hours').value) || 0;
+      const nightHours = parseFloat(document.querySelector('#night-hours').value) || 0;
+      const holidayHours = parseFloat(document.querySelector('#holiday-hours').value) || 0;
+      const overtimePay = overtimeHours * overtimeHourly;
+      const nightPay = nightHours * overtimeHourly;
+      const holidayPay = holidayHours * overtimeHourly;
+      const totalExtra = overtimePay + nightPay + holidayPay;
+
+      document.querySelector('#item-results').innerHTML = itemResults.map(item => `<p>${item.description}</p>`).join('');
+      document.querySelector('#total-ordinary').textContent = formatKRW(ordinaryWage);
+      document.querySelector('#hourly-rate').textContent = formatKRW(hourly);
+      document.querySelector('#daily-rate').textContent = formatKRW(daily);
+      document.querySelector('#overtime-rate').textContent = formatKRW(overtimeHourly);
+
+      const extraResults = document.querySelector('#extra-results');
+      extraResults.innerHTML = `
+        <p><strong>연장근로 수당:</strong> ${formatKRW(overtimePay)}</p>
+        <p><strong>야간근로 수당:</strong> ${formatKRW(nightPay)}</p>
+        <p><strong>휴일근로 수당:</strong> ${formatKRW(holidayPay)}</p>
+        <p><strong>총 추가 수당:</strong> ${formatKRW(totalExtra)}</p>
+      `;
+
+      document.querySelector('#results').style.display = 'block';
+    }
+
+    addRow();
+  </script>
+</body>
+</html>
